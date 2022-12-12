@@ -8,6 +8,8 @@ const corsOptions = require("./config/corsOptions");
 
 const mongoose = require("mongoose");
 const connectDB = require("./config/dbConn");
+// const { sectors } = require("./sector");
+var constant = require("./sector");
 const PORT = process.env.PORT || 3500;
 
 // Connect to MongoDB
@@ -24,12 +26,23 @@ app.use(express.json());
 
 // getting the sectors
 
-app.get("/getcandidate", async (req, res) => {
-  console.log("helo");
-  const candidate = await Candidate.find();
-  if (!candidate)
-    return res.status(204).json({ message: "No candidate found" });
-  res.json(candidate);
+app.get("/getcandidate/:id", async (req, res) => {
+  if (!req?.params?.id) {
+    return res.status(400).json({ message: "ID parameter is required." });
+  } else {
+    const candidate = await Candidate.findOne({ _id: req?.params?.id }).exec();
+    if (!candidate) {
+      return res
+        .status(204)
+        .json({ message: `No candidate matches ID ${req.params.id}.` });
+    } else {
+      res.json(candidate);
+    }
+  }
+});
+
+app.get("/getAllSectors", async (req, res) => {
+  res.json(constant.sectors);
 });
 
 // //creating sectors
@@ -65,7 +78,7 @@ app.patch("/updatecandidate/:id", async (req, res) => {
     } else {
       if (req.body?.name) candidate.name = req.body.name;
       if (req.body?.sectors) candidate.sectors = req.body.sectors;
-      if (req.body?.isAgree) candidate.isAgree = req.body.isAgree;
+      candidate.isAgree = req.body.isAgree;
       const result = await candidate.save();
       res.json(result);
     }
